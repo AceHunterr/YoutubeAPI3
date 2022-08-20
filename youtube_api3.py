@@ -1,22 +1,37 @@
+# Youtube Time Traveller : Enter country, search keyword and date and returns top 10 trending videos of that time
+
+import pycountry
 from datetime import datetime
 from googleapiclient.discovery import build
 from google.api_core.datetime_helpers import to_rfc3339
 
-date_entered = "06/19/2018"
+api_key = "AIzaSyCSdtXwwN3yrfIl0gwle_yG8ifI-mlx25A"
+youtube = build('youtube','v3', developerKey=api_key)
+
+entered_country = "India"
+search = "cricket"
+date_entered = "06/19/2010"
+
+for country in pycountry.countries:
+    try:
+        if country.name == entered_country:
+            iso_code = country.alpha_2 
+    except KeyError:
+            iso_code = "IN"
+
+
 datetime_str = f'{date_entered} 23:59:59'
 datetime_object = datetime.strptime(datetime_str, '%m/%d/%Y %H:%M:%S')
 rfc3339_str = to_rfc3339(datetime_object)
 
-api_key = "AIzaSyCSdtXwwN3yrfIl0gwle_yG8ifI-mlx25A"
-youtube = build('youtube','v3', developerKey=api_key)
-search = "cricket"
-search_date = "2022-08-18T23:59:59Z"
+search_date = rfc3339_str
+videos = []
+vid_ids = []
 
 pl_request = youtube.search().list(
     part = 'snippet',
     q = search,
     maxResults = 50,
-    pageToken = nextPageToken,
     publishedBefore = search_date
 )
 
@@ -25,15 +40,14 @@ pl_response = pl_request.execute()
 # for item in pl_response['items']:
 #     print(item)
 
-videos = []
-vid_ids = []
 
 for item in pl_response['items']:
     vid_ids.append(item['id']['videoId'])
 
 vid_request = youtube.videos().list(
         part = ["statistics","snippet"],
-        id= ','.join(vid_ids)
+        id= ','.join(vid_ids),
+        regionCode = iso_code
     )
 
 vid_response = vid_request.execute()
